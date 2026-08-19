@@ -1,9 +1,11 @@
 import Image from 'next/image';
+import { ChevronDown, ChevronUp } from 'lucide-react';
+import Sparkline from './Sparkline';
 
 async function fetchCoinData() {
   try {
     const response = await fetch(
-      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=false',
+      'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=20&page=1&sparkline=true&price_change_percentage=7d',
       { next: { revalidate: 60 } }
     );
     const data = await response.json();
@@ -19,7 +21,7 @@ export default async function CoinTable() {
   const coins = await fetchCoinData();
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="w-full max-w-274.5 mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Top 20 Cryptocurrencies</h1>
       
       <div className="overflow-x-auto shadow-md rounded-lg">
@@ -31,14 +33,15 @@ export default async function CoinTable() {
               <th className="px-6 py-3 text-left font-semibold">Symbol</th>
               <th className="px-6 py-3 text-right font-semibold">Current Price</th>
               <th className="px-6 py-3 text-right font-semibold">24h Change (%)</th>
+              <th className="px-6 py-3 text-left font-semibold">7d Trend</th>
             </tr>
           </thead>
           <tbody>
             {coins.map((coin: any, index: number) => (
               <tr
                 key={coin.id}
-                className={`border-b ${
-                  index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                className={`border-b border-black/20 ${
+                  index % 2 === 0 ? 'bg-gray-100' : 'bg-white'
                 } hover:bg-blue-50 transition-colors`}
               >
                 <td className="px-6 py-4">
@@ -69,7 +72,22 @@ export default async function CoinTable() {
                       : 'text-red-600'
                   }`}
                 >
-                  {coin.price_change_percentage_24h?.toFixed(2)}%
+                  <span className="inline-flex items-center justify-end">
+                    {coin.price_change_percentage_24h?.toFixed(2)}%
+                    {coin.price_change_percentage_24h >= 0 ? (
+                      <ChevronUp size={16} aria-hidden="true" />
+                    ) : (
+                      <ChevronDown size={16} aria-hidden="true" />
+                    )}
+                  </span>
+                </td>
+                <td className="px-6 py-4">
+                  <Sparkline
+                    data={(coin.sparkline_in_7d?.price ?? []).map(
+                      (value: number) => ({ value })
+                    )}
+                    isPositive={coin.price_change_percentage_24h >= 0}
+                  />
                 </td>
               </tr>
             ))}
